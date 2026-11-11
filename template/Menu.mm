@@ -1,562 +1,264 @@
-//
-//  Menu.m
-//  ModMenu
-//
-//  Created by Joey on 3/14/19.
-//  Copyright © 2019 Joey. All rights reserved.
-//
-
 #import <Foundation/Foundation.h>
 #import "Menu.h"
 
-@interface Menu ()
-
-@property (assign, nonatomic) CGPoint lastMenuLocation;
-@property (strong, nonatomic) UILabel *menuTitle;
-@property (strong, nonatomic) UIView *header;
-@property (strong, nonatomic) UIView *footer;
-
-@end
-
-
-@implementation Menu
-
-NSUserDefaults *defaults;
-
-UIScrollView *scrollView;
-CGFloat menuWidth;
-CGFloat scrollViewX;
-NSString *credits;
-UIColor *switchOnColor;
-NSString *switchTitleFont;
-UIColor *switchTitleColor;
-UIColor *infoButtonColor;
-NSString *menuIconBase64;
-NSString *menuButtonBase64;
-float scrollViewHeight = 0;
-BOOL hasRestoredLastSession = false;
-UIButton *menuButton;
-
-const char *frameworkName = NULL;
-
-UIWindow *mainWindow;
-
-
-// init the menu
-// global variabls, extern in Macros.h
-Menu *menu = [Menu alloc];
-Switches *switches = [Switches alloc];
-
-
--(id)initWithTitle:(NSString *)title_ titleColor:(UIColor *)titleColor_ titleFont:(NSString *)titleFont_ credits:(NSString *)credits_ headerColor:(UIColor *)headerColor_ switchOffColor:(UIColor *)switchOffColor_ switchOnColor:(UIColor *)switchOnColor_ switchTitleFont:(NSString *)switchTitleFont_ switchTitleColor:(UIColor *)switchTitleColor_ infoButtonColor:(UIColor *)infoButtonColor_ maxVisibleSwitches:(int)maxVisibleSwitches_ menuWidth:(CGFloat )menuWidth_ menuIcon:(NSString *)menuIconBase64_ menuButton:(NSString *)menuButtonBase64_ {
-    mainWindow = [UIApplication sharedApplication].keyWindow;
-    defaults = [NSUserDefaults standardUserDefaults];
-
-    menuWidth = menuWidth_;
-    switchOnColor = switchOnColor_;
-    credits = credits_;
-    switchTitleFont = switchTitleFont_;
-    switchTitleColor = switchTitleColor_;
-    infoButtonColor = infoButtonColor_;
-    menuButtonBase64 = menuButtonBase64_;
-
-    // Base of the Menu UI.
-    self = [super initWithFrame:CGRectMake(0,0,menuWidth_, maxVisibleSwitches_ * 50 + 50)];
-    self.center = mainWindow.center;
-    self.layer.opacity = 0.0f;
-
-    self.header = [[UIView alloc]initWithFrame:CGRectMake(0, 1, menuWidth_, 50)];
-    self.header.backgroundColor = headerColor_;
-    CAShapeLayer *headerLayer = [CAShapeLayer layer];
-    headerLayer.path = [UIBezierPath bezierPathWithRoundedRect: self.header.bounds byRoundingCorners: UIRectCornerTopLeft | UIRectCornerTopRight cornerRadii: (CGSize){10.0, 10.0}].CGPath;
-    self.header.layer.mask = headerLayer;
-    [self addSubview:self.header];
-
-    NSData* data = [[NSData alloc] initWithBase64EncodedString:menuIconBase64_ options:0];
-    UIImage* menuIconImage = [UIImage imageWithData:data];
-
-    UIButton *menuIcon = [UIButton buttonWithType:UIButtonTypeRoundedRect];
-    menuIcon.frame = CGRectMake(5, 1, 50, 50);
-    menuIcon.backgroundColor = [UIColor clearColor];
-    [menuIcon setBackgroundImage:menuIconImage forState:UIControlStateNormal];
-
-    [menuIcon addTarget:self action:@selector(menuIconTapped) forControlEvents:UIControlEventTouchDown];
-    [self.header addSubview:menuIcon];
-
-    scrollView = [[UIScrollView alloc]initWithFrame:CGRectMake(0, CGRectGetHeight(self.header.bounds), menuWidth_, CGRectGetHeight(self.bounds) - CGRectGetHeight(self.header.bounds))];
-    scrollView.backgroundColor = switchOffColor_;
-    [self addSubview:scrollView];
-
-    // we need this for the switches, do not remove.
-    scrollViewX = CGRectGetMinX(scrollView.self.bounds);
-
-    self.menuTitle = [[UILabel alloc]initWithFrame:CGRectMake(55, -2, menuWidth_ - 60, 50)];
-    self.menuTitle.text = title_;
-    self.menuTitle.textColor = titleColor_;
-    self.menuTitle.font = [UIFont fontWithName:titleFont_ size:30.0f];
-    self.menuTitle.adjustsFontSizeToFitWidth = true;
-    self.menuTitle.textAlignment = NSTextAlignmentCenter;
-    [self.header addSubview: self.menuTitle];
-
-    self.footer = [[UIView alloc]initWithFrame:CGRectMake(0, CGRectGetHeight(self.bounds) - 1, menuWidth_, 20)];
-    self.footer.backgroundColor = headerColor_;
-    CAShapeLayer *footerLayer = [CAShapeLayer layer];
-    footerLayer.path = [UIBezierPath bezierPathWithRoundedRect:self.footer.bounds byRoundingCorners: UIRectCornerBottomLeft | UIRectCornerBottomRight cornerRadii: (CGSize){10.0, 10.0}].CGPath;
-    self.footer.layer.mask = footerLayer;
-    [self addSubview:self.footer];
-
-    UIPanGestureRecognizer *dragMenuRecognizer = [[UIPanGestureRecognizer alloc]initWithTarget:self action:@selector(menuDragged:)];
-    [self.header addGestureRecognizer:dragMenuRecognizer];
-
-    UITapGestureRecognizer *tapGestureRecognizer = [[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(hideMenu:)];
-    tapGestureRecognizer.numberOfTapsRequired = 1;
-    [self.header addGestureRecognizer:tapGestureRecognizer];
-
-    [mainWindow addSubview:self];
-    [self showMenuButton];
-
-    return self;
+// sets the colors
+void Menu::setColors() {
+	style->Colors[ImGuiCol_WindowBg] = *winCol;
+	style->Colors[ImGuiCol_Border] = ImColor(0, 0, 0, 0);
+	style->Colors[ImGuiCol_Button] = *bgCol;
+	style->Colors[ImGuiCol_ButtonActive] = *btnActiveCol;
+	style->Colors[ImGuiCol_ButtonHovered] = *btnHoverCol;
+	style->Colors[ImGuiCol_FrameBg] = *bgCol;
+	style->Colors[ImGuiCol_FrameBgActive] = *frameCol;
+	style->Colors[ImGuiCol_FrameBgHovered] = *hoverCol;
+	style->Colors[ImGuiCol_Text] = *textCol;
+	style->Colors[ImGuiCol_ChildBg] = *childCol;
+	style->Colors[ImGuiCol_CheckMark] = *itemActiveCol;
+	style->Colors[ImGuiCol_SliderGrab] = *itemCol;
+	style->Colors[ImGuiCol_SliderGrabActive] = *itemActiveCol;
+	style->Colors[ImGuiCol_Header] = *itemActiveCol;
+	style->Colors[ImGuiCol_HeaderHovered] = *itemCol;
+	style->Colors[ImGuiCol_HeaderActive] = *itemActiveCol;
+	style->Colors[ImGuiCol_ResizeGrip] = *resizeGripCol;
+	style->Colors[ImGuiCol_ResizeGripHovered] = *resizeGripHoverCol;
+	style->Colors[ImGuiCol_ResizeGripActive] = *itemActiveCol;
+	style->Colors[ImGuiCol_SeparatorHovered] = *resizeGripHoverCol;
+	style->Colors[ImGuiCol_SeparatorActive] = *itemActiveCol;
+	style->Colors[ImGuiCol_TitleBgActive] = *itemActiveCol;
 }
 
-// Detects whether the menu is being touched and sets a lastMenuLocation.
-- (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event {
-    self.lastMenuLocation = CGPointMake(CGRectGetMinX(self.frame), CGRectGetMinY(self.frame));
-    [super touchesBegan:touches withEvent:event];
+// setup fonts
+void Menu::loadFont() {
+	ImGuiIO& io = ImGui::GetIO(); (void)io;
+	io.Fonts->Clear();
+
+	ImFontConfig font_cfg;
+	font_cfg.FontDataOwnedByAtlas = false;
+	io.Fonts->AddFontFromMemoryTTF((void*)poppinsFont, sizeof(poppinsFont), isIphone ? 20 : 24, &font_cfg);
+
+	static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
+	ImFontConfig icons_config;
+	icons_config.MergeMode = true;
+	icons_config.PixelSnapH = true;
+	icons_config.FontDataOwnedByAtlas = false;
+	io.Fonts->AddFontFromMemoryTTF((void*)fontAwesome, sizeof(fontAwesome), isIphone ? 20 : 24, &icons_config, icons_ranges);
+
+	ImFontConfig bigFontCfg;
+	bigFontCfg.FontDataOwnedByAtlas = false;
+	bigFont = io.Fonts->AddFontFromMemoryTTF((void*)poppinsFont, sizeof(poppinsFont), isIphone ? 24 : 30, &bigFontCfg);
+	io.Fonts->AddFontFromMemoryTTF((void*)fontAwesome, sizeof(fontAwesome), isIphone ? 20 : 24, &icons_config, icons_ranges);
 }
 
-// Update the menu's location when it's being dragged
-- (void)menuDragged:(UIPanGestureRecognizer *)pan {
-    CGPoint newLocation = [pan translationInView:self.superview];
-    self.frame = CGRectMake(self.lastMenuLocation.x + newLocation.x, self.lastMenuLocation.y + newLocation.y, CGRectGetWidth(self.frame), CGRectGetHeight(self.frame));
+// load theme
+void Menu::loadTheme() {
+	loadFont();
+
+	style = &ImGui::GetStyle();
+
+	style->WindowRounding = 6;
+	style->ChildRounding = 6;
+	style->FrameRounding = 2;
+	style->GrabRounding = 2;
+	style->PopupRounding = 2;
+
+	style->ScrollbarSize = 9;
+	style->FramePadding = ImVec2(6, 3);
+	style->ItemSpacing = ImVec2(4, 4);
+
+	setColors();
 }
 
-- (void)hideMenu:(UITapGestureRecognizer *)tap {
-    if(tap.state == UIGestureRecognizerStateEnded) {
-        [UIView animateWithDuration:0.5 animations:^ {
-            self.alpha = 0.0f;
-            menuButton.alpha = 1.0f;
-        }];
-    }
+// Top left part of the menu
+void Menu::renderLogo() {
+	ImGui::BeginGroup(); {
+		ImGui::BeginChild(obf("Logo").c_str(), ImVec2(isIphone ? 118.5 : 158, isIphone ? 37.5 : 50), true);
+
+		ImGui::PushFont(bigFont);
+		ImGui::SameLine();
+		ImGui::SetCursorPosY(isIphone ? 5 : 11);
+		ImGui::TextUnformatted(obf("BAWA G STORE").c_str());
+		ImGui::PopFont();
+
+		ImGui::EndChild();
+		ImGui::EndGroup();
+	}
 }
 
--(void)showMenu:(UITapGestureRecognizer *)tapGestureRecognizer {
-    if(tapGestureRecognizer.state == UIGestureRecognizerStateEnded) {
-        menuButton.alpha = 0.0f;
-        [UIView animateWithDuration:0.5 animations:^ {
-            self.alpha = 1.0f;
-        }];
-    }
-    // We should only have to do this once (first launch)
-    if(!hasRestoredLastSession) {
-        restoreLastSession();
-        hasRestoredLastSession = true;
-    }
+// Bottom Left Part of the menu 
+void Menu::renderUser() {
+	int height = isIphone * 110 + !isIphone * 140;
+	ImGui::Dummy(ImVec2(0.0f, ImGui::GetContentRegionAvail().y - height - style->ItemSpacing.y));
+	ImGui::BeginChild(obf("User").c_str(), ImVec2(isIphone ? 118.5 : 158, height), true);
+	ImGui::Text("BAWA G STORE");
+	ImGui::Spacing();
+	if (ImGui::Button("Telegram")) {
+		[[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"https://t.me/bawagstore"] options:@{} completionHandler:nil];
+	}
+	if (ImGui::Button("WhatsApp")) {
+		[[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"https://chat.whatsapp.com/F9ZdAEk39iuGeAiALXZ6oJ"] options:@{} completionHandler:nil];
+	}
+	ImGui::EndChild();
 }
 
-/**********************************************************************************************
-     This function will be called when the menu has been opened for the first time on launch.
-     It'll handle the correct background color and patches the switches do.
-***********************************************************************************************/
-void restoreLastSession() {
-    UIColor *clearColor = [UIColor clearColor];
-    BOOL isOn = false;
-
-    for(id switch_ in scrollView.subviews) {
-        if([switch_ isKindOfClass:[OffsetSwitch class]]) {
-            isOn = [defaults boolForKey:[switch_ getPreferencesKey]];
-            std::vector<MemoryPatch> memoryPatches = [switch_ getMemoryPatches];
-            for(int i = 0; i < memoryPatches.size(); i++) {
-                if(isOn){
-                 memoryPatches[i].Modify();
-                } else {
-                 memoryPatches[i].Restore();
-                }
-            }
-            ((OffsetSwitch*)switch_).backgroundColor = isOn ? switchOnColor : clearColor;
-        }
-
-        if([switch_ isKindOfClass:[TextFieldSwitch class]]) {
-            isOn = [defaults boolForKey:[switch_ getPreferencesKey]];
-            ((TextFieldSwitch*)switch_).backgroundColor = isOn ? switchOnColor : clearColor;
-        }
-
-        if([switch_ isKindOfClass:[SliderSwitch class]]) {
-            isOn = [defaults boolForKey:[switch_ getPreferencesKey]];
-            ((SliderSwitch*)switch_).backgroundColor = isOn ? switchOnColor : clearColor;
-        }
-    }
+// The One Responsible Drawing all of this
+void Menu::renderPanel() {
+	renderLogo();
+	ImGui::Spacing();
+	renderTabs();
+	renderUser();
 }
 
--(void)showMenuButton {
-    NSData* data = [[NSData alloc] initWithBase64EncodedString:menuButtonBase64 options:0];
-    UIImage* menuButtonImage = [UIImage imageWithData:data];
+// the Selectable Buttons
+void Menu::renderTabs() {
+	ImGui::BeginChild(obf("tabs").c_str(), ImVec2(isIphone ? 118.5 : 158, isIphone ? 165 : 220), true);
+	ImGui::Spacing();
 
-    menuButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
-    menuButton.frame = CGRectMake((mainWindow.frame.size.width/2), (mainWindow.frame.size.height/2), 50, 50);
-    menuButton.backgroundColor = [UIColor clearColor];
-    [menuButton setBackgroundImage:menuButtonImage forState:UIControlStateNormal];
-
-    UITapGestureRecognizer *tapGestureRecognizer = [[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(showMenu:)];
-    [menuButton addGestureRecognizer:tapGestureRecognizer];
-
-    [menuButton addTarget:self action:@selector(buttonDragged:withEvent:)
-       forControlEvents:UIControlEventTouchDragInside];
-    [mainWindow addSubview:menuButton];
+	ImVec4 col(0, 0, 0, 0);
+	ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 10);
+	std::string tabNames[] = { obf(ICON_FA_CROSSHAIRS " Main"), obf(ICON_FA_EYE " Visuals"), obf(ICON_FA_COG " Misc"), obf(ICON_FA_TOOLS " Settings") };
+	
+	float buttonWidth = isIphone ? 100.0f : 140.0f;
+	float buttonHeight = isIphone ? 30.0f : 40.0f;
+	
+	for (int i = 0; i < sizeof(tabNames) / sizeof(tabNames[0]); i++) {
+		std::string it = tabNames[i];
+		ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0, 0.5));
+		ImGui::PushStyleColor(ImGuiCol_Button, selectedTab == i ? style->Colors[ImGuiCol_ButtonActive] : col);
+		ImGui::PushStyleColor(ImGuiCol_Text, selectedTab == i ? style->Colors[ImGuiCol_Text] : *notSelectedTextColor);
+		if (ImGui::Button(it.c_str(), ImVec2(buttonWidth, buttonHeight))) selectedTab = i;
+		ImGui::PopStyleVar();
+		ImGui::PopStyleColor(2);
+	}
+	ImGui::PopStyleVar();
+	ImGui::EndChild();
 }
 
-// handler for when the user is draggin the menu.
-- (void)buttonDragged:(UIButton *)button withEvent:(UIEvent *)event {
-    UITouch *touch = [[event touchesForView:button] anyObject];
+// SubTabs
+void Menu::renderSubTab0() {
+	std::vector<std::string> arr = { obf("TAB1"), obf("TAB2"), obf("TAB3") };
+	ImGuiHelper::drawTabHorizontally(obf("subtab-0"), ImVec2(ImGuiHelper::getWidth(), 50), arr, selectedSubTab0);
+	ImGui::Spacing();
 
-    CGPoint previousLocation = [touch previousLocationInView:button];
-    CGPoint location = [touch locationInView:button];
-    CGFloat delta_x = location.x - previousLocation.x;
-    CGFloat delta_y = location.y - previousLocation.y;
+	ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0, 0, 0, 0));
+	ImGui::BeginChild(obf("modules-wrapper").c_str(), ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y), false);
+	ImGui::PopStyleColor();
 
-    button.center = CGPointMake(button.center.x + delta_x, button.center.y + delta_y);
+	switch (selectedSubTab0) {
+	case 0: {
+		ImGui::Columns(2, nullptr, false);
+		ImGui::SetColumnOffset(1, 300);
+		ImGui::BeginChild(obf("aimassist").c_str(), ImVec2(ImGuiHelper::getWidth(), 300), true);
+		ImGui::EndChild();
+		ImGui::Spacing();
+		ImGui::BeginChild(obf("aimassist2").c_str(), ImVec2(ImGuiHelper::getWidth(), ImGuiHelper::getHeight()), true);
+		ImGui::EndChild();
+		ImGui::NextColumn();
+		ImGui::BeginChild(obf("aimassist3").c_str(), ImVec2(ImGuiHelper::getWidth(), ImGuiHelper::getHeight()), true);
+		ImGui::EndChild();
+		break;
+	}
+	case 1: break;
+	case 2: break;
+	}
+	ImGui::EndChild();
 }
 
-// When the menu icon(on the header) has been tapped, we want to show proper credits!
--(void)menuIconTapped {
-    [self showPopup:self.menuTitle.text description:credits];
-    self.layer.opacity = 0.0f;
+void Menu::renderSubTab1() {
+	ImGuiHelper::drawTabHorizontally(obf("subtab-1"), ImVec2(ImGuiHelper::getWidth(), 50), { obf("ESP"), obf("World"), obf("Other") }, selectedSubTab1);
+	ImGui::Spacing();
+
+	ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0, 0, 0, 0));
+	ImGui::BeginChild(obf("modules-wrapper").c_str(), ImVec2(ImGuiHelper::getWidth(), ImGuiHelper::getHeight()), false);
+	ImGui::PopStyleColor();
+
+	switch (selectedSubTab1) {
+	case 0: {
+		ImGui::Columns(2, nullptr, false);
+		ImGui::SetColumnOffset(1, 300);
+		ImGui::BeginChild(obf("esp").c_str(), ImVec2(ImGuiHelper::getWidth(), 300), true);
+		ImGui::EndChild();
+		ImGui::Spacing();
+		ImGui::BeginChild(obf("Markers").c_str(), ImVec2(ImGuiHelper::getWidth(), ImGuiHelper::getHeight()), true);
+		ImGui::EndChild();
+		ImGui::NextColumn();
+		ImGui::BeginChild(obf("esp2").c_str(), ImVec2(ImGuiHelper::getWidth(), ImGuiHelper::getHeight()), true);
+		ImGui::EndChild();
+		break;
+	}
+	case 1: break;
+	case 2: break;
+	}
+	ImGui::EndChild();
 }
 
--(void)showPopup:(NSString *)title_ description:(NSString *)description_ {
-    SCLAlertView *alert = [[SCLAlertView alloc] initWithNewWindow];
+void Menu::renderSubTab2() {
+	std::vector<std::string> arr = { obf("General"), obf("Other") };
+	ImGuiHelper::drawTabHorizontally(obf("subtab-2"), ImVec2(ImGuiHelper::getWidth(), 50), arr, selectedSubTab2);
+	ImGui::Spacing();
 
-    alert.shouldDismissOnTapOutside = NO;
-    alert.customViewColor = [UIColor purpleColor];
-    alert.showAnimationType = SCLAlertViewShowAnimationFadeIn;
+	ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0, 0, 0, 0));
+	ImGui::BeginChild(obf("modules-wrapper").c_str(), ImVec2(ImGuiHelper::getWidth(), ImGuiHelper::getHeight()), false);
+	ImGui::PopStyleColor();
 
-    [alert addButton: @"Ok!" actionBlock: ^(void) {
-        self.layer.opacity = 1.0f;
-    }];
-
-    [alert showInfo:title_ subTitle:description_ closeButtonTitle:nil duration:9999999.0f];
+	switch (selectedSubTab2) {
+	case 0: {
+		ImGui::Columns(2, nullptr, false);
+		ImGui::SetColumnOffset(1, 300);
+		ImGui::BeginChild(obf("misc##0-0").c_str(), ImVec2(ImGuiHelper::getWidth(), 300), true);
+		ImGui::Checkbox("Streamer Mode", &StreamerMode);
+		ImGui::EndChild();
+		ImGui::Spacing();
+		ImGui::BeginChild(obf("misc##0-1").c_str(), ImVec2(ImGuiHelper::getWidth(), ImGuiHelper::getHeight()), true);
+		ImGui::EndChild();
+		ImGui::NextColumn();
+		ImGui::BeginChild(obf("misc##0-2").c_str(), ImVec2(ImGuiHelper::getWidth(), ImGuiHelper::getHeight()), true);
+		ImGui::EndChild();
+		break;
+	}
+	case 1: {
+		ImGui::Columns(2, nullptr, false);
+		ImGui::SetColumnOffset(1, 300);
+		ImGui::BeginChild(obf("gui").c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 300), true);
+		ImGui::ColorEdit4(obf("Window Color##1").c_str(), (float*)winCol, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
+		ImGui::ColorEdit4(obf("BackGround Color##1").c_str(), (float*)childCol, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
+		ImGui::ColorEdit4(obf("Frame Color##1").c_str(), (float*)frameCol, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
+		ImGui::ColorEdit4(obf("Button Color##1").c_str(), (float*)bgCol, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
+		ImGui::ColorEdit4(obf("Button Hovered Color##1").c_str(), (float*)btnHoverCol, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
+		ImGui::ColorEdit4(obf("Button Active Color##1").c_str(), (float*)btnActiveCol, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
+		ImGui::ColorEdit4(obf("Item Color##1").c_str(), (float*)itemCol, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
+		ImGui::ColorEdit4(obf("Item Active Color##1").c_str(), (float*)itemActiveCol, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
+		setColors();
+		ImGui::EndChild();
+		ImGui::Spacing();
+		ImGui::BeginChild(obf("smth").c_str(), ImVec2(ImGuiHelper::getWidth(), ImGuiHelper::getHeight()), true);
+		ImGui::EndChild();
+		ImGui::NextColumn();
+		ImGui::BeginChild(obf("whoknows").c_str(), ImVec2(ImGuiHelper::getWidth(), ImGuiHelper::getHeight()), true);
+		ImGui::EndChild();
+		break;
+	}
+	}
+	ImGui::EndChild();
 }
 
-/*******************************************************************
-    This method adds the given switch to the menu's scrollview.
-    it also add's an action for when the switch is being clicked.
-********************************************************************/
-- (void)addSwitchToMenu:(id)switch_ {
-    [switch_ addTarget:self action:@selector(switchClicked:) forControlEvents:UIControlEventTouchDown];
-    scrollViewHeight += 50;
-    scrollView.contentSize = CGSizeMake(menuWidth, scrollViewHeight);
-    [scrollView addSubview:switch_];
+void Menu::render() {
+	if (ImGui::Begin("ModMenu", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar)) {
+		ImGuiWindow* CurrentWindow = ImGui::GetCurrentWindow();
+		MenuSize   = CurrentWindow->Size;
+		MenuOrigin = CurrentWindow->Pos;
+
+		renderPanel();
+		ImGui::SameLine();
+		
+		ImGui::BeginChild(obf("MainContent").c_str(), ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y), false);
+		switch (selectedTab) {
+		case 0: renderSubTab0(); break;
+		case 1: renderSubTab1(); break;
+		case 2: renderSubTab2(); break;
+		case 3: break;
+		}
+		ImGui::EndChild();
+
+		ImGui::End();
+	}
 }
-
-- (void)changeSwitchBackground:(id)switch_ isSwitchOn:(BOOL)isSwitchOn_ {
-    UIColor *clearColor = [UIColor clearColor];
-
-    [UIView animateWithDuration:0.3 animations:^ {
-        if([switch_ isKindOfClass:[TextFieldSwitch class]]) {
-            ((TextFieldSwitch*)switch_).backgroundColor = isSwitchOn_ ? clearColor : switchOnColor;
-        }
-        if([switch_ isKindOfClass:[SliderSwitch class]]) {
-            ((SliderSwitch*)switch_).backgroundColor = isSwitchOn_ ? clearColor : switchOnColor;
-        }
-        if([switch_ isKindOfClass:[OffsetSwitch class]]) {
-            ((OffsetSwitch*)switch_).backgroundColor = isSwitchOn_ ? clearColor : switchOnColor;
-        }
-    }];
-
-    [defaults setBool:!isSwitchOn_ forKey:[switch_ getPreferencesKey]];
-}
-
-/*********************************************************************************************
-    This method does the following handles the behaviour when a switch has been clicked
-    TextfieldSwitch and SliderSwitch only change from color based on whether it's on or not.
-    A OffsetSwitch does too, but it also applies offset patches
-***********************************************************************************************/
--(void)switchClicked:(id)switch_ {
-    BOOL isOn = [defaults boolForKey:[switch_ getPreferencesKey]];
-
-    if([switch_ isKindOfClass:[OffsetSwitch class]]) {
-        std::vector<MemoryPatch> memoryPatches = [switch_ getMemoryPatches];
-        for(int i = 0; i < memoryPatches.size(); i++) {
-            if(!isOn){
-                memoryPatches[i].Modify();
-            } else {
-                memoryPatches[i].Restore();
-           }
-        }
-    }
-
-    // Update switch background color and pref value.
-    [self changeSwitchBackground:switch_ isSwitchOn:isOn];
-}
-
--(void)setFrameworkName:(const char *)name_ {
-    frameworkName = name_;
-}
-
--(const char *)getFrameworkName {
-    return frameworkName;
-}
-@end // End of menu class!
-
-
-/********************************
-    OFFSET SWITCH STARTS HERE!
-*********************************/
-
-@implementation OffsetSwitch {
-    std::vector<MemoryPatch> memoryPatches;
-}
-
-- (id)initHackNamed:(NSString *)hackName_ description:(NSString *)description_ offsets:(std::vector<uint64_t>)offsets_ bytes:(std::vector<std::string>)bytes_ {
-    description = description_;
-    preferencesKey = hackName_;
-
-    if(offsets_.size() != bytes_.size()){
-        [menu showPopup:@"Invalid input count" description:[NSString stringWithFormat:@"Offsets array input count (%d) is not equal to the bytes array input count (%d)", (int)offsets_.size(), (int)bytes_.size()]];
-    } else {
-        // For each offset, we create a MemoryPatch.
-        for(int i = 0; i < offsets_.size(); i++) {
-            MemoryPatch patch = MemoryPatch::createWithHex([menu getFrameworkName], offsets_[i], bytes_[i]);
-            if(patch.isValid()) {
-              memoryPatches.push_back(patch);
-            } else {
-              [menu showPopup:@"Invalid patch" description:[NSString stringWithFormat:@"Failing offset: 0x%llx, please re-check the hex you entered.", offsets_[i]]];
-            }
-        }
-    }
-
-    self = [super initWithFrame:CGRectMake(-1, scrollViewX + scrollViewHeight - 1, menuWidth + 2, 50)];
-    self.backgroundColor = [UIColor clearColor];
-    self.layer.borderWidth = 0.5f;
-    self.layer.borderColor = [UIColor whiteColor].CGColor;
-
-    switchLabel = [[UILabel alloc]initWithFrame:CGRectMake(20, 0, menuWidth - 60, 50)];
-    switchLabel.text = hackName_;
-    switchLabel.textColor = switchTitleColor;
-    switchLabel.font = [UIFont fontWithName:switchTitleFont size:18];
-    switchLabel.adjustsFontSizeToFitWidth = true;
-    switchLabel.textAlignment = NSTextAlignmentCenter;
-    [self addSubview:switchLabel];
-
-    UIButton *infoButton = [UIButton buttonWithType:UIButtonTypeInfoDark];
-    infoButton.frame = CGRectMake(menuWidth - 30, 15, 20, 20);
-    infoButton.tintColor = infoButtonColor;
-
-    UITapGestureRecognizer *infoTap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(showInfo:)];
-    [infoButton addGestureRecognizer:infoTap];
-    [self addSubview:infoButton];
-
-    return self;
-}
-
--(void)showInfo:(UIGestureRecognizer *)gestureRec {
-    if(gestureRec.state == UIGestureRecognizerStateEnded) {
-        [menu showPopup:[self getPreferencesKey] description:[self getDescription]];
-        menu.layer.opacity = 0.0f;
-    }
-}
-
--(NSString *)getPreferencesKey {
-    return preferencesKey;
-}
-
--(NSString *)getDescription {
-    return description;
-}
-
-- (std::vector<MemoryPatch>)getMemoryPatches {
-    return memoryPatches;
-}
-
-@end //end of OffsetSwitch class
-
-
-/**************************************
-    TEXTFIELD SWITCH STARTS HERE!
-    - Note that this extends from OffsetSwitch.
-***************************************/
-
-@implementation TextFieldSwitch {
-    UITextField *textfieldValue;
-}
-
-- (id)initTextfieldNamed:(NSString *)hackName_ description:(NSString *)description_ inputBorderColor:(UIColor *)inputBorderColor_ {
-    preferencesKey = hackName_;
-    switchValueKey = [hackName_ stringByApplyingTransform:NSStringTransformLatinToCyrillic reverse:false];
-    description = description_;
-
-    self = [super initWithFrame:CGRectMake(-1, scrollViewX + scrollViewHeight -1, menuWidth + 2, 50)];
-    self.backgroundColor = [UIColor clearColor];
-    self.layer.borderWidth = 0.5f;
-    self.layer.borderColor = [UIColor whiteColor].CGColor;
-
-    switchLabel = [[UILabel alloc]initWithFrame:CGRectMake(20, 0, menuWidth - 60, 30)];
-    switchLabel.text = hackName_;
-    switchLabel.textColor = switchTitleColor;
-    switchLabel.font = [UIFont fontWithName:switchTitleFont size:18];
-    switchLabel.adjustsFontSizeToFitWidth = true;
-    switchLabel.textAlignment = NSTextAlignmentCenter;
-    [self addSubview:switchLabel];
-
-    textfieldValue = [[UITextField alloc]initWithFrame:CGRectMake(menuWidth / 4 - 10, switchLabel.self.bounds.origin.x - 5 + switchLabel.self.bounds.size.height, menuWidth / 2, 20)];
-    textfieldValue.layer.borderWidth = 2.0f;
-    textfieldValue.layer.borderColor = inputBorderColor_.CGColor;
-    textfieldValue.layer.cornerRadius = 10.0f;
-    textfieldValue.textColor = switchTitleColor;
-    textfieldValue.textAlignment = NSTextAlignmentCenter;
-    textfieldValue.delegate = self;
-    textfieldValue.backgroundColor = [UIColor clearColor];
-
-    // get value from the plist & show it (if it's not empty).
-    if([[NSUserDefaults standardUserDefaults] objectForKey:switchValueKey] != nil) {
-        textfieldValue.text = [[NSUserDefaults standardUserDefaults] objectForKey:switchValueKey];
-    }
-
-    UIButton *infoButton = [UIButton buttonWithType:UIButtonTypeInfoDark];
-    infoButton.frame = CGRectMake(menuWidth - 30, 15, 20, 20);
-    infoButton.tintColor = infoButtonColor;
-
-    UITapGestureRecognizer *infoTap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(showInfo:)];
-    [infoButton addGestureRecognizer:infoTap];
-    [self addSubview:infoButton];
-
-    [self addSubview:textfieldValue];
-
-    return self;
-}
-
-// so when click "return" the keyboard goes way, got it from internet. Common thing apparantly
--(BOOL)textFieldShouldReturn:(UITextField*)textfieldValue_ {
-    switchValueKey = [[self getPreferencesKey] stringByApplyingTransform:NSStringTransformLatinToCyrillic reverse:false];
-    [defaults setObject:textfieldValue_.text forKey:[self getSwitchValueKey]];
-    [textfieldValue_ resignFirstResponder];
-
-    return true;
-}
-
--(NSString *)getSwitchValueKey {
-    return switchValueKey;
-}
-
-@end // end of TextFieldSwitch Class
-
-
-/*******************************
-    SLIDER SWITCH STARTS HERE!
-    - Note that this extends from TextFieldSwitch
- *******************************/
-
-@implementation SliderSwitch {
-    UISlider *sliderValue;
-    float valueOfSlider;
-}
-
-- (id)initSliderNamed:(NSString *)hackName_ description:(NSString *)description_ minimumValue:(float)minimumValue_ maximumValue:(float)maximumValue_ sliderColor:(UIColor *)sliderColor_{
-    preferencesKey = hackName_;
-    switchValueKey = [hackName_ stringByApplyingTransform:NSStringTransformLatinToCyrillic reverse:false];
-    description = description_;
-
-    self = [super initWithFrame:CGRectMake(-1, scrollViewX + scrollViewHeight -1, menuWidth + 2, 50)];
-    self.backgroundColor = [UIColor clearColor];
-    self.layer.borderWidth = 0.5f;
-    self.layer.borderColor = [UIColor whiteColor].CGColor;
-
-    switchLabel = [[UILabel alloc]initWithFrame:CGRectMake(20, 0, menuWidth - 60, 30)];
-    switchLabel.text = [NSString stringWithFormat:@"%@ %.2f", hackName_, sliderValue.value];
-    switchLabel.textColor = switchTitleColor;
-    switchLabel.font = [UIFont fontWithName:switchTitleFont size:18];
-    switchLabel.adjustsFontSizeToFitWidth = true;
-    switchLabel.textAlignment = NSTextAlignmentCenter;
-    [self addSubview:switchLabel];
-
-    sliderValue = [[UISlider alloc]initWithFrame:CGRectMake(menuWidth / 4 - 20, switchLabel.self.bounds.origin.x - 4 + switchLabel.self.bounds.size.height, menuWidth / 2 + 20, 20)];
-    sliderValue.thumbTintColor = sliderColor_;
-    sliderValue.minimumTrackTintColor = switchTitleColor;
-    sliderValue.maximumTrackTintColor = switchTitleColor;
-    sliderValue.minimumValue = minimumValue_;
-    sliderValue.maximumValue = maximumValue_;
-    sliderValue.continuous = true;
-    [sliderValue addTarget:self action:@selector(sliderValueChanged:) forControlEvents:UIControlEventValueChanged];
-    valueOfSlider = sliderValue.value;
-
-    // get value from the plist & show it (if it's not empty).
-    if([[NSUserDefaults standardUserDefaults] objectForKey:switchValueKey] != nil) {
-        sliderValue.value = [[NSUserDefaults standardUserDefaults] floatForKey:switchValueKey];
-        switchLabel.text = [NSString stringWithFormat:@"%@ %.2f", hackName_, sliderValue.value];
-    }
-
-    UIButton *infoButton = [UIButton buttonWithType:UIButtonTypeInfoLight];
-    infoButton.frame = CGRectMake(menuWidth - 30, 15, 20, 20);
-    infoButton.tintColor = infoButtonColor;
-
-    UITapGestureRecognizer *infoTap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(showInfo:)];
-    [infoButton addGestureRecognizer:infoTap];
-    [self addSubview:infoButton];
-
-    [self addSubview:sliderValue];
-
-    return self;
-}
-
--(void)sliderValueChanged:(UISlider *)slider_ {
-    switchValueKey = [[self getPreferencesKey] stringByApplyingTransform:NSStringTransformLatinToCyrillic reverse:false];
-    switchLabel.text = [NSString stringWithFormat:@"%@ %.2f", [self getPreferencesKey], slider_.value];
-    [defaults setFloat:slider_.value forKey:[self getSwitchValueKey]];
-}
-
-@end // end of SliderSwitch class
-
-
-
-
-
-@implementation Switches
-
-
--(void)addSwitch:(NSString *)hackName_ description:(NSString *)description_ {
-    OffsetSwitch *offsetPatch = [[OffsetSwitch alloc]initHackNamed:hackName_ description:description_ offsets:std::vector<uint64_t>{} bytes:std::vector<std::string>{}];
-    [menu addSwitchToMenu:offsetPatch];
-
-}
-
-- (void)addOffsetSwitch:(NSString *)hackName_ description:(NSString *)description_ offsets:(std::initializer_list<uint64_t>)offsets_ bytes:(std::initializer_list<std::string>)bytes_ {
-    std::vector<uint64_t> offsetVector;
-    std::vector<std::string> bytesVector;
-
-    offsetVector.insert(offsetVector.begin(), offsets_.begin(), offsets_.end());
-    bytesVector.insert(bytesVector.begin(), bytes_.begin(), bytes_.end());
-
-    OffsetSwitch *offsetPatch = [[OffsetSwitch alloc]initHackNamed:hackName_ description:description_ offsets:offsetVector bytes:bytesVector];
-    [menu addSwitchToMenu:offsetPatch];
-}
-
-- (void)addTextfieldSwitch:(NSString *)hackName_ description:(NSString *)description_ inputBorderColor:(UIColor *)inputBorderColor_ {
-    TextFieldSwitch *textfieldSwitch = [[TextFieldSwitch alloc]initTextfieldNamed:hackName_ description:description_ inputBorderColor:inputBorderColor_];
-    [menu addSwitchToMenu:textfieldSwitch];
-}
-
-- (void)addSliderSwitch:(NSString *)hackName_ description:(NSString *)description_ minimumValue:(float)minimumValue_ maximumValue:(float)maximumValue_ sliderColor:(UIColor *)sliderColor_ {
-    SliderSwitch *sliderSwitch = [[SliderSwitch alloc] initSliderNamed:hackName_ description:description_ minimumValue:minimumValue_ maximumValue:maximumValue_ sliderColor:sliderColor_];
-    [menu addSwitchToMenu:sliderSwitch];
-}
-
-- (NSString *)getValueFromSwitch:(NSString *)name {
-
-    //getting the correct key for the saved input.
-    NSString *correctKey =  [name stringByApplyingTransform:NSStringTransformLatinToCyrillic reverse:false];
-
-    if([[NSUserDefaults standardUserDefaults] objectForKey:correctKey]) {
-        return [[NSUserDefaults standardUserDefaults] objectForKey:correctKey];
-    }
-    else if([[NSUserDefaults standardUserDefaults] floatForKey:correctKey]) {
-        NSString *sliderValue = [NSString stringWithFormat:@"%f", [[NSUserDefaults standardUserDefaults] floatForKey:correctKey]];
-        return sliderValue;
-    }
-
-    return 0;
-}
-
--(bool)isSwitchOn:(NSString *)switchName {
-    return [[NSUserDefaults standardUserDefaults] boolForKey:switchName];
-}
-
-@end
