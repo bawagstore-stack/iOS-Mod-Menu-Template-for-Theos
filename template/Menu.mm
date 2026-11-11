@@ -68,178 +68,70 @@ void Menu::loadTheme() {
 	setColors();
 }
 
-// Top left part of the menu
+// Top Welcome Card & Logo matching your requested style
 void Menu::renderLogo() {
-	ImGui::BeginGroup(); {
-		ImGui::BeginChild(obf("Logo").c_str(), ImVec2(isIphone ? 118.5 : 158, isIphone ? 37.5 : 50), true);
-
-		ImGui::PushFont(bigFont);
-		ImGui::SameLine();
-		ImGui::SetCursorPosY(isIphone ? 5 : 11);
-		ImGui::TextUnformatted(obf("BAWA G STORE").c_str());
-		ImGui::PopFont();
-
-		ImGui::EndChild();
-		ImGui::EndGroup();
-	}
-}
-
-// Bottom Left Part of the menu 
-void Menu::renderUser() {
-	int height = isIphone * 110 + !isIphone * 140;
-	ImGui::Dummy(ImVec2(0.0f, ImGui::GetContentRegionAvail().y - height - style->ItemSpacing.y));
-	ImGui::BeginChild(obf("User").c_str(), ImVec2(isIphone ? 118.5 : 158, height), true);
-	ImGui::Text("BAWA G STORE");
+	ImGui::BeginGroup();
+	
+	float cardWidth = isIphone ? 300.0f : 360.0f;
+	ImGui::SetCursorPosX((ImGui::GetWindowWidth() - cardWidth) * 0.5f);
+	ImGui::BeginChild(obf("WelcomeCard").c_str(), ImVec2(cardWidth, isIphone ? 340.0f : 380.0f), true, ImGuiWindowFlags_NoScrollbar);
+	
 	ImGui::Spacing();
-	if (ImGui::Button("Telegram")) {
+	
+	// Title: WELCOME TO BAWA G STORE
+	ImGui::PushFont(bigFont);
+	std::string title1 = "WELCOME TO";
+	std::string title2 = "BAWA G STORE";
+	
+	ImGui::SetCursorPosX((cardWidth - ImGui::CalcTextSize(title1.c_str()).x) * 0.5f);
+	ImGui::TextColored(ImVec4(0.9f, 0.9f, 0.9f, 1.0f), "%s", title1.c_str());
+	
+	ImGui::SetCursorPosX((cardWidth - ImGui::CalcTextSize(title2.c_str()).x) * 0.5f);
+	ImGui::TextColored(ImVec4(0.1f, 0.7f, 1.0f, 1.0f), "%s", title2.c_str());
+	ImGui::PopFont();
+	
+	ImGui::Spacing();
+	
+	// Logo Placeholder (Centered)
+	float imgSize = isIphone ? 65.0f : 85.0f;
+	ImGui::SetCursorPosX((cardWidth - imgSize) * 0.5f);
+	ImGui::Button(obf("BAWA G LOGO").c_str(), ImVec2(imgSize, imgSize));
+	
+	ImGui::Spacing();
+	
+	// Subtitle / Tagline
+	std::string subtitle = "Enjoy, dear friend — BAWA G is everyone's friend";
+	ImGui::SetCursorPosX((cardWidth - ImGui::CalcTextSize(subtitle.c_str()).x) * 0.5f);
+	ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), "%s", subtitle.c_str());
+	
+	ImGui::Spacing();
+	ImGui::Spacing();
+	
+	// Sleek Card Buttons (Telegram & WhatsApp)
+	float btnW = cardWidth - 30.0f;
+	float btnH = 42.0f;
+	
+	ImGui::SetCursorPosX(15.0f);
+	if (ImGui::Button(obf("  Telegram Channel          >").c_str(), ImVec2(btnW, btnH))) {
 		[[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"https://t.me/bawagstore"] options:@{} completionHandler:nil];
 	}
-	if (ImGui::Button("WhatsApp")) {
+	
+	ImGui::Spacing();
+	ImGui::SetCursorPosX(15.0f);
+	if (ImGui::Button(obf("  WhatsApp Group            >").c_str(), ImVec2(btnW, btnH))) {
 		[[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"https://chat.whatsapp.com/F9ZdAEk39iuGeAiALXZ6oJ"] options:@{} completionHandler:nil];
 	}
-	ImGui::EndChild();
-}
-
-// The One Responsible Drawing all of this
-void Menu::renderPanel() {
-	renderLogo();
-	ImGui::Spacing();
-	renderTabs();
-	renderUser();
-}
-
-// the Selectable Buttons
-void Menu::renderTabs() {
-	ImGui::BeginChild(obf("tabs").c_str(), ImVec2(isIphone ? 118.5 : 158, isIphone ? 165 : 220), true);
-	ImGui::Spacing();
-
-	ImVec4 col(0, 0, 0, 0);
-	ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 10);
-	std::string tabNames[] = { obf(ICON_FA_CROSSHAIRS " Main"), obf(ICON_FA_EYE " Visuals"), obf(ICON_FA_COG " Misc"), obf(ICON_FA_TOOLS " Settings") };
 	
-	float buttonWidth = isIphone ? 100.0f : 140.0f;
-	float buttonHeight = isIphone ? 30.0f : 40.0f;
-	
-	for (int i = 0; i < sizeof(tabNames) / sizeof(tabNames[0]); i++) {
-		std::string it = tabNames[i];
-		ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0, 0.5));
-		ImGui::PushStyleColor(ImGuiCol_Button, selectedTab == i ? style->Colors[ImGuiCol_ButtonActive] : col);
-		ImGui::PushStyleColor(ImGuiCol_Text, selectedTab == i ? style->Colors[ImGuiCol_Text] : *notSelectedTextColor);
-		if (ImGui::Button(it.c_str(), ImVec2(buttonWidth, buttonHeight))) selectedTab = i;
-		ImGui::PopStyleVar();
-		ImGui::PopStyleColor(2);
-	}
-	ImGui::PopStyleVar();
 	ImGui::EndChild();
+	ImGui::EndGroup();
 }
 
-// SubTabs
-void Menu::renderSubTab0() {
-	std::vector<std::string> arr = { obf("TAB1"), obf("TAB2"), obf("TAB3") };
-	ImGuiHelper::drawTabHorizontally(obf("subtab-0"), ImVec2(ImGuiHelper::getWidth(), 50), arr, selectedSubTab0);
-	ImGui::Spacing();
-
-	ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0, 0, 0, 0));
-	ImGui::BeginChild(obf("modules-wrapper").c_str(), ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y), false);
-	ImGui::PopStyleColor();
-
-	switch (selectedSubTab0) {
-	case 0: {
-		ImGui::Columns(2, nullptr, false);
-		ImGui::SetColumnOffset(1, 300);
-		ImGui::BeginChild(obf("aimassist").c_str(), ImVec2(ImGuiHelper::getWidth(), 300), true);
-		ImGui::EndChild();
-		ImGui::Spacing();
-		ImGui::BeginChild(obf("aimassist2").c_str(), ImVec2(ImGuiHelper::getWidth(), ImGuiHelper::getHeight()), true);
-		ImGui::EndChild();
-		ImGui::NextColumn();
-		ImGui::BeginChild(obf("aimassist3").c_str(), ImVec2(ImGuiHelper::getWidth(), ImGuiHelper::getHeight()), true);
-		ImGui::EndChild();
-		break;
-	}
-	case 1: break;
-	case 2: break;
-	}
-	ImGui::EndChild();
-}
-
-void Menu::renderSubTab1() {
-	ImGuiHelper::drawTabHorizontally(obf("subtab-1"), ImVec2(ImGuiHelper::getWidth(), 50), { obf("ESP"), obf("World"), obf("Other") }, selectedSubTab1);
-	ImGui::Spacing();
-
-	ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0, 0, 0, 0));
-	ImGui::BeginChild(obf("modules-wrapper").c_str(), ImVec2(ImGuiHelper::getWidth(), ImGuiHelper::getHeight()), false);
-	ImGui::PopStyleColor();
-
-	switch (selectedSubTab1) {
-	case 0: {
-		ImGui::Columns(2, nullptr, false);
-		ImGui::SetColumnOffset(1, 300);
-		ImGui::BeginChild(obf("esp").c_str(), ImVec2(ImGuiHelper::getWidth(), 300), true);
-		ImGui::EndChild();
-		ImGui::Spacing();
-		ImGui::BeginChild(obf("Markers").c_str(), ImVec2(ImGuiHelper::getWidth(), ImGuiHelper::getHeight()), true);
-		ImGui::EndChild();
-		ImGui::NextColumn();
-		ImGui::BeginChild(obf("esp2").c_str(), ImVec2(ImGuiHelper::getWidth(), ImGuiHelper::getHeight()), true);
-		ImGui::EndChild();
-		break;
-	}
-	case 1: break;
-	case 2: break;
-	}
-	ImGui::EndChild();
-}
-
-void Menu::renderSubTab2() {
-	std::vector<std::string> arr = { obf("General"), obf("Other") };
-	ImGuiHelper::drawTabHorizontally(obf("subtab-2"), ImVec2(ImGuiHelper::getWidth(), 50), arr, selectedSubTab2);
-	ImGui::Spacing();
-
-	ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0, 0, 0, 0));
-	ImGui::BeginChild(obf("modules-wrapper").c_str(), ImVec2(ImGuiHelper::getWidth(), ImGuiHelper::getHeight()), false);
-	ImGui::PopStyleColor();
-
-	switch (selectedSubTab2) {
-	case 0: {
-		ImGui::Columns(2, nullptr, false);
-		ImGui::SetColumnOffset(1, 300);
-		ImGui::BeginChild(obf("misc##0-0").c_str(), ImVec2(ImGuiHelper::getWidth(), 300), true);
-		ImGui::Checkbox("Streamer Mode", &StreamerMode);
-		ImGui::EndChild();
-		ImGui::Spacing();
-		ImGui::BeginChild(obf("misc##0-1").c_str(), ImVec2(ImGuiHelper::getWidth(), ImGuiHelper::getHeight()), true);
-		ImGui::EndChild();
-		ImGui::NextColumn();
-		ImGui::BeginChild(obf("misc##0-2").c_str(), ImVec2(ImGuiHelper::getWidth(), ImGuiHelper::getHeight()), true);
-		ImGui::EndChild();
-		break;
-	}
-	case 1: {
-		ImGui::Columns(2, nullptr, false);
-		ImGui::SetColumnOffset(1, 300);
-		ImGui::BeginChild(obf("gui").c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 300), true);
-		ImGui::ColorEdit4(obf("Window Color##1").c_str(), (float*)winCol, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
-		ImGui::ColorEdit4(obf("BackGround Color##1").c_str(), (float*)childCol, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
-		ImGui::ColorEdit4(obf("Frame Color##1").c_str(), (float*)frameCol, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
-		ImGui::ColorEdit4(obf("Button Color##1").c_str(), (float*)bgCol, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
-		ImGui::ColorEdit4(obf("Button Hovered Color##1").c_str(), (float*)btnHoverCol, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
-		ImGui::ColorEdit4(obf("Button Active Color##1").c_str(), (float*)btnActiveCol, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
-		ImGui::ColorEdit4(obf("Item Color##1").c_str(), (float*)itemCol, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
-		ImGui::ColorEdit4(obf("Item Active Color##1").c_str(), (float*)itemActiveCol, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
-		setColors();
-		ImGui::EndChild();
-		ImGui::Spacing();
-		ImGui::BeginChild(obf("smth").c_str(), ImVec2(ImGuiHelper::getWidth(), ImGuiHelper::getHeight()), true);
-		ImGui::EndChild();
-		ImGui::NextColumn();
-		ImGui::BeginChild(obf("whoknows").c_str(), ImVec2(ImGuiHelper::getWidth(), ImGuiHelper::getHeight()), true);
-		ImGui::EndChild();
-		break;
-	}
-	}
-	ImGui::EndChild();
-}
+void Menu::renderUser() {}
+void Menu::renderPanel() { renderLogo(); }
+void Menu::renderTabs() {}
+void Menu::renderSubTab0() {}
+void Menu::renderSubTab1() {}
+void Menu::renderSubTab2() {}
 
 void Menu::render() {
 	if (ImGui::Begin("ModMenu", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar)) {
@@ -248,17 +140,6 @@ void Menu::render() {
 		MenuOrigin = CurrentWindow->Pos;
 
 		renderPanel();
-		ImGui::SameLine();
-		
-		ImGui::BeginChild(obf("MainContent").c_str(), ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y), false);
-		switch (selectedTab) {
-		case 0: renderSubTab0(); break;
-		case 1: renderSubTab1(); break;
-		case 2: renderSubTab2(); break;
-		case 3: break;
-		}
-		ImGui::EndChild();
-
 		ImGui::End();
 	}
 }
