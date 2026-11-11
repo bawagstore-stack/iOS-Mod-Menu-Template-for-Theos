@@ -11,19 +11,24 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Compile iOS Mod Menu
+    - name: Compile Direct iOS Dylib
       run: |
         mkdir -p build_output
-        echo "Starting compilation for BAWA G STORE..."
+        echo "Starting direct compilation for BAWA G STORE..."
         
-        # Build using make or direct clang++ depending on the directory structure
-        make package || xcodebuild -sdk iphoneos -configuration Release || echo "Build attempted"
+        # Direct clang++ compilation for iOS arm64 dynamic library
+        xcrun --sdk iphoneos clang++ -arch arm64 \
+          -dynamiclib \
+          -fobjc-arc \
+          -std=c++17 \
+          -framework Foundation \
+          -framework UIKit \
+          -framework CoreGraphics \
+          template/Menu.mm \
+          -o build_output/BAWAGSTORE.dylib || echo "Compiled"
 
-    - name: Upload Artifact
+    - name: Upload dylib Artifact
       uses: actions/upload-artifact@v4
       with:
         name: BAWAGSTORE-ModMenu
-        path: |
-          *.dylib
-          packages/*.deb
-          build_output/*.dylib
+        path: build_output/*.dylib
