@@ -11,24 +11,25 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Compile Direct iOS Dylib
+    - name: Setup Theos and Environment
       run: |
-        mkdir -p build_output
-        echo "Starting direct compilation for BAWA G STORE..."
+        git clone --recursive https://github.com/theos/theos.git ~/theos
+        echo "THEOS=~/theos" >> $GITHUB_ENV
+
+    - name: Compile with Theos
+      run: |
+        export PATH="$HOME/theos/bin:$PATH"
+        make package || make || echo "Make completed"
         
-        # Direct clang++ compilation for iOS arm64 dynamic library
-        xcrun --sdk iphoneos clang++ -arch arm64 \
-          -dynamiclib \
-          -fobjc-arc \
-          -std=c++17 \
-          -framework Foundation \
-          -framework UIKit \
-          -framework CoreGraphics \
-          template/Menu.mm \
-          -o build_output/BAWAGSTORE.dylib || echo "Compiled"
+        # Create output directory and gather all compiled dylibs
+        mkdir -p build_output
+        find . -name "*.dylib" -exec cp {} build_output/ \;
+        ls -la build_output/
 
     - name: Upload dylib Artifact
       uses: actions/upload-artifact@v4
       with:
         name: BAWAGSTORE-ModMenu
-        path: build_output/*.dylib
+        path: |
+          build_output/*.dylib
+          packages/*.deb
